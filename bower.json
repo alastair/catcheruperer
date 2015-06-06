@@ -1,0 +1,20 @@
+{
+  "name": "billboard",
+  "version": "0.1",
+  "authors": [
+    "Alastair Porter <alastair@porter.net.nz>"
+  ],
+  "description": "Billboard chart explorer",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.4",
+    "typeahead.js": "~0.11.1"
+  }
+}

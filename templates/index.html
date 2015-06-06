@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block main %}
+<h2>Catcheruperer</h2>
+<p>Enter the last track you remember from the charts, and we'll build you a playlist
+to catch up with music since then</p>
+<div id="track">
+  <input class="typeahead tt-input" type="text" placeholder="Track name">
+</div>
+<h3>Other toys</h3>
+
+<h4>Charts per year</h4>
+<p>Songs that were on the charts in a given year</p>
+<table class="table">
+    <tr>
+        {% for y in years %}
+        {% if loop.index0 % 10 == 0 %}</tr><tr>{% endif %}
+        <td><a href="/year/{{y}}">{{y}}</a></td>
+        {% endfor %}
+    </tr>
+</table>
+
+<h4>Artist charts</h4>
+<p>Charts for a single artist</p>
+
+<h4>Charts of the charts</h4>
+<p>Some "best-ofs" from the charts</p>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+    var getTrack = new Bloodhound({
+      datumTokenizer: Bloodhound.tokenizers.whitespace,
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      remote: {
+        url: '/autocomplete?q=%QUERY',
+        wildcard: '%QUERY'
+      }
+    });
+
+$(document).ready(function() {
+    $('#track .typeahead').typeahead(null, {
+      name: 'artists',
+      display: 'value',
+      source: getTrack
+    });
+});
+</script>
+{% endblock %}
