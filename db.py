@@ -4,6 +4,8 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy import func
 from sqlalchemy import desc
 
+import json
+
 Base = declarative_base()
 engine = create_engine('postgresql://alastair:@/billboard') #, echo=True)
 
@@ -11,6 +13,10 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 
 session = Session()
+
+def load_auc():
+    return json.load(open("auc.json"))
+auc = load_auc()
 
 class Chart(Base):
     __tablename__ = "chart"
@@ -77,7 +83,20 @@ def longest():
     return charts
 
 def year(theyear):
-    return between('%s-01-01' % theyear, '%-s-12-31' % theyear)
+    fr = '%s-01-01' % theyear
+    to = '%-s-12-31' % theyear
+
+    charts = session.query(
+        func.min(Chart.week), Chart.artist, Chart.title)\
+        .filter(Chart.week>=fr).filter(Chart.week <=to)\
+        .group_by(Chart.artist, Chart.title)\
+        .all()
+
+    ret = []
+    for c in charts:
+        k = "%s - %s" % (c[1], c[2])
+        ret.append((auc.get(k, 0), c[1], c[2], c[0]))
+    return sorted(ret, key=lambda x: x[3])
 
 def between(fr, to):
     """ Unique list of tracks on the chart in a year. Ordered by
@@ -85,10 +104,9 @@ def between(fr, to):
     """
     #  select artist, title, min(week), position from chart where week like '1990%' group by artist, title, position order by min(week), position;
     charts = session.query(
-        func.sum(101-Chart.position), Chart.artist, Chart.title)\
+        Chart.artist, Chart.title, Chart.position, Chart.week)\
         .filter(Chart.week>=fr).filter(Chart.week <=to)\
-        .group_by(Chart.artist, Chart.title)\
-        .order_by(desc(func.sum(100-Chart.position)))\
+        .order_by(Chart.week, Chart.position)\
         .all()
     return charts
 

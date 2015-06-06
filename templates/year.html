@@ -7,8 +7,9 @@
     {% for d in data %}
     <tr>
         <td><a href="/artist/{{d[1]}}/{{d[2]}}">{{d[1]}} - {{d[2]}}</a></td>
-        <td>{{d[2]}}</td><td>{{d[0]}}</td></tr>
+        <td>{{d[3]}}</td><td>{{d[0]}}</td></tr>
     {% endfor %}
+</table>
 {% endblock %}
 
 {% block scripts %}

@@ -113,6 +113,7 @@ def playlistjson(playid):
 def back(artist, title, hours):
 
     actual_hours, tracks = playlist.make_playlist(artist, title, hours)
+
     trackids = playlist.songs_to_spotifyid(tracks)
 
     title = "Catchup from %s - %s in %s hours" % (artist, title, actual_hours)

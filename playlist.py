@@ -4,14 +4,13 @@ import db
 import json
 import random
 import os
+import math
 
 import spotipy
 import spotipy.util as util
 
 from dateutil import parser
 from datetime import timedelta
-
-ONE_WEEK = timedelta(weeks=1)
 
 def load_spdata():
     d = json.load(open("spotify-data.json"))
@@ -84,38 +83,31 @@ def songs_for_year(fromdate):
 
     yearsongs = []
 
-    # todate = fromdate + 1 week
-    fromparse = parser.parse(fromdate)
-    toparse = fromparse + ONE_WEEK
-    todate = toparse.isoformat()[:10]
-    while todate < finaldate:
-        # TODO: Optimise to not do 1 `between` call per week
-        songs = db.between(fromdate, todate)
-        # TODO XXX Important - this doesn't do area under curve if
-        #      it has from and to date - it has to have the artist and track instead
+    songs = db.between(fromdate, finaldate)
 
-        sumweights = float(sum([s[0] for s in songs]))
-        tochoose = []
-        for s in songs:
-            tochoose.append( ("%s - %s" % (s[1], s[2]), s[0]/sumweights) )
-            # TODO: Don't need to divide by sum, weighted_choice does it
-            # TODO: Weight by inverse-log of position on chart
-            # TODO: Return metadata separate, plus week it was on the chart
+    lastdate = None
+    tochoose = []
+    for s in songs:
+        artist, title, position, date = s
+        if date != lastdate and len(tochoose):
+            song = weighted_choice(tochoose)
+            yearsongs.append(song)
+            lastdate = date
+            tochoose = []
 
-        song = weighted_choice(tochoose)
-        yearsongs.append(song)
-
-        # add one week to todate
-        toparse = toparse + ONE_WEEK
-        todate = toparse.isoformat()[:10]
+        k = "%s - %s" % (artist, title)
+        weight = db.auc.get(k, 0)
+        factor = 1-(math.log(position)/math.log(101))
+        tochoose.append( (s, weight*factor) )
 
     return yearsongs
 
 def songs_to_spotifyid(songs):
     ret = []
-    for s in songs:
-        if s in spdata:
-            ret.append(spdata[s]["uri"])
+    for artist, title, pos, week in songs:
+        k = "%s - %s" % (artist, title)
+        if k in spdata:
+            ret.append(spdata[k]["uri"])
     return ret
 
 def create_spotify_playlist(playlist_name, track_ids):
@@ -149,18 +141,23 @@ def cache_playlist(meta, tracks):
 
     filename = os.path.join("playlists", "%s.json" % playlistid)
 
-    items = {
-                "startDate":"1962,12,10",
-                "endDate":"1962,12,11",
-                "headline":"Tic Toc",
-                "text":"<p>Lords Of The Underground</p>",
+    tlist = []
+    for artist, title, position, week in tracks:
+        k = "%s - %s" % (artist, title)
+        spmeta = spdata.get(k, {})
+        d = {
+                "startDate": week,
+                "endDate": week,
+                "headline": title,
+                "text":"<p>%s</p>" % artist,
                 "asset": {
-                    "media":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
-                    "thumbnail":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
+                    "media": spmeta["album_art"],
+                    "thumbnail": spmeta["album_art"],
                     "credit":"",
                     "caption":""
                 }
             }
+        tlist.append(d)
 
     data = {"timeline":
     {
@@ -173,7 +170,7 @@ def cache_playlist(meta, tracks):
             "credit":"",
             "caption":""
         },
-        "date": []
+        "date": tlist
         }}
 
     res = {"meta": meta, "data": data}
