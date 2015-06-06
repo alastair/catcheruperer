@@ -28,6 +28,7 @@ class Chart(Base):
     def __repr__(self):
         return "<Chart: %s - %s (%s:%s)>" % (self.artist, self.title, self.week, self.position)
 
+
 def get_suggestions(query):
     charts = session.query(
         func.count(Chart.id), func.min(Chart.position), Chart.artist, Chart.title)\
@@ -67,11 +68,23 @@ def year(theyear):
     """ Unique list of tracks on the chart in a year. Ordered by
     (entry date, chart position)
     """
-    pass
+    #  select artist, title, min(week), position from chart where week like '1990%' group by artist, title, position order by min(week), position;
+    charts = session.query(
+        func.min(Chart.week), Chart.position, Chart.artist, Chart.title)\
+        .filter(Chart.week.like('%s%%' % theyear))\
+        .group_by(Chart.artist, Chart.title, Chart.position)\
+        .order_by(func.min(Chart.week), Chart.position)\
+        .all()
+    return charts
 
 def artist(artistname):
     """ An artist's tracks. Ordered by (entry on charts, position) """
-    pass
+    charts = session.query(
+        Chart.artist, Chart.title)\
+        .filter(Chart.artist==artistname)\
+        .group_by(Chart.artist, Chart.title)\
+        .all()
+    return charts
 
 def stats(artist, title):
     """ Stats for a single track:
@@ -86,9 +99,11 @@ def stats(artist, title):
     positionsort = sorted(data, key=lambda x: x.position)
     highest = positionsort[0].position
 
-    return {"highest": highest, "weeks": weeks, "weeksone": weeksone, "first": first, "last": last}
+    positions = [101 - d.position for d in data]
+    rank = sum(positions)
 
-
+    return {"artist": artist, "title": title, "highest": highest, "weeks": weeks,
+            "weeksone": weeksone, "first": first, "last": last, "rank": rank}
 
 def makedb():
     Base.metadata.create_all(engine)

@@ -1,30 +1,38 @@
 {% extends "base.html" %}
 
 {% block main %}
-<h2>Catcheruperer</h2>
-<p>Enter the last track you remember from the charts, and we'll build you a playlist
-to catch up with music since then</p>
+<h2>Help!</h2>
 <div id="track">
-  <input class="typeahead tt-input" type="text" placeholder="Track name">
+<form class="form-inline">
+<p>I haven't listened to any music since
+  <input class="typeahead tt-input" type="text"> was on the charts
+  and I need to catch up in the next <input type="text" style="width:50px;"> hours</p>
+  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+</form>
 </div>
-<h3>Other toys</h3>
 
-<h4>Charts per year</h4>
-<p>Songs that were on the charts in a given year</p>
-<table class="table">
-    <tr>
-        {% for y in years %}
-        {% if loop.index0 % 10 == 0 %}</tr><tr>{% endif %}
-        <td><a href="/year/{{y}}">{{y}}</a></td>
-        {% endfor %}
-    </tr>
-</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 
-<h4>Artist charts</h4>
-<p>Charts for a single artist</p>
+<div id="track">
+<form class="form-inline">
+<p>The first song I remember was
+  <input class="typeahead tt-input" type="text"> but I need to understand
+  what my dad is talking about in the next <input type="text" style="width:50px;"> hours</p>
+  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+</form>
+</div>
 
-<h4>Charts of the charts</h4>
-<p>Some "best-ofs" from the charts</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div id="track">
+<form class="form-inline">
+<p>I'm moving to Sweden
+  and need an overview of the last 10 years of popular music in the next <input type="text" style="width:50px;"> hours</p>
+  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+</form>
+</div>
 {% endblock %}
 
 {% block scripts %}

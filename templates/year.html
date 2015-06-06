@@ -2,6 +2,13 @@
 
 {% block main %}
 <h2>Tracks from {{year}}</h2>
+<table class="table">
+    <tr><th>Song</th><th>Date entered chart</th><th>rank</th></tr>
+    {% for d in data %}
+    <tr>
+        <td><a href="/artist/{{d['artist']}}/{{d['title']}}">{{d['artist']}} - {{d['title']}}</a></td>
+        <td>{{d['first']}}</td><td>{{d['rank']}}</td></tr>
+    {% endfor %}
 {% endblock %}
 
 {% block scripts %}
