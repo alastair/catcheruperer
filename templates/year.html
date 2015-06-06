@@ -6,8 +6,8 @@
     <tr><th>Song</th><th>Date entered chart</th><th>rank</th></tr>
     {% for d in data %}
     <tr>
-        <td><a href="/artist/{{d['artist']}}/{{d['title']}}">{{d['artist']}} - {{d['title']}}</a></td>
-        <td>{{d['first']}}</td><td>{{d['rank']}}</td></tr>
+        <td><a href="/artist/{{d[1]}}/{{d[2]}}">{{d[1]}} - {{d[2]}}</a></td>
+        <td>{{d[2]}}</td><td>{{d[0]}}</td></tr>
     {% endfor %}
 {% endblock %}
 

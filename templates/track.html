@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 
 {% block main %}
+{% if missing %}
+<p>Not a track we know about, sorry :(</p>
+{% else %}
+
 <div id="container" style="width:100%; height:400px;"></div>
 <h3>{{artist}} - {{title}}</h3>
 <p>Entry on the charts: {{stats['first']}}<br>
 Exit from the charts: {{stats['last']}} ({{stats['weeks']}} weeks)<br>
 Highest rank: {{stats['highest']}}<br>
 Weeks at number 1: {{stats['weeksone']}}</p>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

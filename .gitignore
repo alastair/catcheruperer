@@ -2,3 +2,4 @@
 *.swp
 env
 bower_components
+conf.py

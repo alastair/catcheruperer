@@ -3,5 +3,6 @@ SQLAlchemy==1.0.4
 beautifulsoup4==4.3.2
 ipython==3.1.0
 psycopg2==2.6
+python-dateutil==2.4.2
 requests==2.7.0
 spotipy==2.3.6

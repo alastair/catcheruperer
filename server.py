@@ -3,9 +3,13 @@ from flask import render_template
 from flask import request
 from flask import jsonify
 from flask import Response
+from flask import redirect, url_for
+
+import json
+import os
 
 import db
-import json
+import conf
 
 app = Flask(__name__)
 
@@ -21,7 +25,7 @@ def hacks():
 def quote(s):
     return json.dumps(s)
 
-@app.route("/artist/<artist>/<title>")
+@app.route("/artist/<artist>/<path:title>")
 def track(artist, title):
     data = db.trackdata(artist, title)
 
@@ -35,8 +39,13 @@ def track(artist, title):
     arttitle = "%s - %s" % (artist, title)
     arttitle = quote(arttitle)
 
-    return render_template('track.html', artist=artist, title=title,
-            dates=dates, positions=positions, stats=stats, arttitle=arttitle)
+    if stats and data:
+        ret = {"artist": artist, "title": title, "dates": dates,
+                "positions": positions, "stats": stats, "arttitle": arttitle}
+    else:
+        ret = {"missing": True}
+
+    return render_template('track.html', **ret)
 
 @app.route("/artist/<artistname>")
 def artist(artistname):
@@ -45,7 +54,8 @@ def artist(artistname):
     newdata= []
     for d in tracks:
         stats = db.stats(d[0], d[1])
-        newdata.append(stats)
+        if stats:
+            newdata.append(stats)
     tracks = sorted(newdata, key=lambda x: x["rank"], reverse=True)
 
     return render_template('artist.html', artist=artistname, tracks=tracks)
@@ -53,12 +63,6 @@ def artist(artistname):
 @app.route("/year/<theyear>")
 def year(theyear):
     yeardata = db.year(theyear)
-
-    newdata= []
-    for d in yeardata:
-        stats = db.stats(d[2], d[3])
-        newdata.append(stats)
-    yeardata = sorted(newdata, key=lambda x: x["rank"], reverse=True)
 
     return render_template('year.html', year=theyear, data=yeardata)
 
@@ -69,13 +73,64 @@ def charts():
 
     return render_template('charts.html', longest=longest, longestone=longestone)
 
-@app.route("/autocomplete")
-def autocomplete():
+@app.route("/complete/artist")
+def completeartist():
     q = request.args.get('q')
     if q:
-        sugg = db.get_suggestions(q)
+        sugg = db.get_artist_suggestions(q)
         return Response(json.dumps(sugg),  mimetype='application/json')
     return None
+
+@app.route("/complete/track")
+def completetrack():
+    q = request.args.get('q')
+    if q:
+        sugg = db.get_track_suggestions(q)
+        return Response(json.dumps(sugg),  mimetype='application/json')
+    return None
+
+@app.route("/playlist/<playid>")
+def playlist(playid):
+
+    pl = json.load(open(os.path.join("playlists", "%s.json" % playid)))
+    meta = pl["meta"]
+    url = meta["url"]
+
+    endpoint = url_for('playlistjson', playid)
+
+    return render_template('playlist.html', endpoint=endpoint, url=url)
+
+@app.route("/playlist/<playid>.json")
+def playlistjson(playid):
+
+    pl = json.load(open(os.path.join("playlists", "%s.json" % playid)))
+
+    data = pl["data"]
+
+    return Response(json.dumps(data),  mimetype='application/json')
+
+@app.route("/back/<artist>/<path:title>/<hours>")
+def back(artist, title, hours):
+
+    actual_hours, tracks = playlist.make_playlist(artist, title, hours)
+    trackids = playlist.songs_to_spotifyid(tracks)
+
+    title = "Catchup from %s - %s in %s hours" % (artist, title, actual_hours)
+    playlistid, playlistopen, playlistspoturl = playlist.create_spotify_playlist(title, trackids)
+
+    meta = {"title": title, "playlistid": playlistid, "playlistopen": playlistopen}
+
+    playlist.cache_playlist(meta, tracks)
+
+    return redirect(url_for('playlist', playlistid))
+
+@app.route("/forward/<artist>/<path:title>/<hours>")
+def forward(artist, title, hours):
+    return render_template('playlist.html')
+
+@app.route("/sweden/<hours>")
+def sweden(hours):
+    return render_template('playlist.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

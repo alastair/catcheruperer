@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy import desc
 
 Base = declarative_base()
-engine = create_engine('postgresql://alastair:@/billboard', echo=True)
+engine = create_engine('postgresql://alastair:@/billboard') #, echo=True)
 
 from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
@@ -29,7 +29,7 @@ class Chart(Base):
         return "<Chart: %s - %s (%s:%s)>" % (self.artist, self.title, self.week, self.position)
 
 
-def get_suggestions(query):
+def get_track_suggestions(query):
     charts = session.query(
         func.count(Chart.id), func.min(Chart.position), Chart.artist, Chart.title)\
             .filter(Chart.title.ilike('%%%s%%' % query))\
@@ -39,7 +39,19 @@ def get_suggestions(query):
     # num weeks * by -1 because highest number of weeks
     # should come first ('lowest')
     charts = sorted(charts, key=lambda x: (x[0]*-1, x[1]))
-    return [{"value": "%s - %s" % (c[2], c[3])} for c in charts][:10]
+    return [{"value": "%s - %s" % (c[2], c[3]), "artist": c[2], "title": c[3]} for c in charts][:10]
+
+def get_artist_suggestions(query):
+    charts = session.query(
+        func.count(Chart.id), func.min(Chart.position), Chart.artist)\
+            .filter(Chart.artist.ilike('%%%s%%' % query))\
+            .group_by(Chart.artist).all()
+
+    # sort by number of weeks on chart, chart position
+    # num weeks * by -1 because highest number of weeks
+    # should come first ('lowest')
+    charts = sorted(charts, key=lambda x: (x[0]*-1, x[1]))
+    return [{"value": c[2], "artist": c[2]} for c in charts][:10]
 
 def trackdata(artist, title):
     return session.query(Chart).filter(Chart.artist==artist).filter(Chart.title==title).all()
@@ -65,15 +77,18 @@ def longest():
     return charts
 
 def year(theyear):
+    return between('%s-01-01' % theyear, '%-s-12-31' % theyear)
+
+def between(fr, to):
     """ Unique list of tracks on the chart in a year. Ordered by
     (entry date, chart position)
     """
     #  select artist, title, min(week), position from chart where week like '1990%' group by artist, title, position order by min(week), position;
     charts = session.query(
-        func.min(Chart.week), Chart.position, Chart.artist, Chart.title)\
-        .filter(Chart.week.like('%s%%' % theyear))\
-        .group_by(Chart.artist, Chart.title, Chart.position)\
-        .order_by(func.min(Chart.week), Chart.position)\
+        func.sum(101-Chart.position), Chart.artist, Chart.title)\
+        .filter(Chart.week>=fr).filter(Chart.week <=to)\
+        .group_by(Chart.artist, Chart.title)\
+        .order_by(desc(func.sum(100-Chart.position)))\
         .all()
     return charts
 
@@ -94,16 +109,19 @@ def stats(artist, title):
     weeks = len(data)
     weeksone = len([d for d in data if d.position==1])
     datesort = sorted(data, key=lambda x: x.week)
-    first = datesort[0].week
-    last = datesort[-1].week
-    positionsort = sorted(data, key=lambda x: x.position)
-    highest = positionsort[0].position
+    if datesort:
+        first = datesort[0].week
+        last = datesort[-1].week
+        positionsort = sorted(data, key=lambda x: x.position)
+        highest = positionsort[0].position
 
-    positions = [101 - d.position for d in data]
-    rank = sum(positions)
+        positions = [101 - d.position for d in data]
+        rank = sum(positions)
 
-    return {"artist": artist, "title": title, "highest": highest, "weeks": weeks,
-            "weeksone": weeksone, "first": first, "last": last, "rank": rank}
+        return {"artist": artist, "title": title, "highest": highest, "weeks": weeks,
+                "weeksone": weeksone, "first": first, "last": last, "rank": rank}
+    else:
+        return {}
 
 def makedb():
     Base.metadata.create_all(engine)

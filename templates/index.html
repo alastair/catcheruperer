@@ -2,24 +2,28 @@
 
 {% block main %}
 <h2>Help!</h2>
-<div id="track">
-<form class="form-inline">
+<div id="forward">
+<form class="form-inline" id="form-forward">
+    <input type="hidden" id="forward-artist">
+    <input type="hidden" id="forward-title">
 <p>I haven't listened to any music since
   <input class="typeahead tt-input" type="text"> was on the charts
-  and I need to catch up in the next <input type="text" style="width:50px;"> hours</p>
-  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+  and I need to catch up in the next <input type="text" id="forward-time" style="width:50px;"> hours</p>
+  <input type="submit" class="btn btn-success btn-lg" value="You're my only hope">
 </form>
 </div>
 
 <p>&nbsp;</p>
 <p>&nbsp;</p>
 
-<div id="track">
-<form class="form-inline">
+<div id="back">
+<form class="form-inline" id="form-back">
+    <input type="hidden" id="back-artist">
+    <input type="hidden" id="back-title">
 <p>The first song I remember was
   <input class="typeahead tt-input" type="text"> but I need to understand
-  what my dad is talking about in the next <input type="text" style="width:50px;"> hours</p>
-  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+  what my dad is talking about in the next <input id="back-time" type="text" style="width:50px;"> hours</p>
+  <input type="submit" class="btn btn-success btn-lg" value="You're my only hope">
 </form>
 </div>
 
@@ -27,10 +31,10 @@
 <p>&nbsp;</p>
 
 <div id="track">
-<form class="form-inline">
+<form id="form-sweden" class="form-inline">
 <p>I'm moving to Sweden
-  and need an overview of the last 10 years of popular music in the next <input type="text" style="width:50px;"> hours</p>
-  <span class="text-center"><button type="button" class="btn btn-success btn-lg">You're my only hope</button></span>
+  and need an overview of the last 10 years of popular music in the next <input id="sweden-time" type="text" style="width:50px;"> hours</p>
+  <input type="submit" class="btn btn-success btn-lg" value="You're my only hope">
 </form>
 </div>
 {% endblock %}
@@ -41,17 +45,57 @@
       datumTokenizer: Bloodhound.tokenizers.whitespace,
       queryTokenizer: Bloodhound.tokenizers.whitespace,
       remote: {
-        url: '/autocomplete?q=%QUERY',
+        url: '/complete/track?q=%QUERY',
         wildcard: '%QUERY'
       }
     });
 
 $(document).ready(function() {
-    $('#track .typeahead').typeahead(null, {
+    $('#form-forward .typeahead').typeahead(null, {
       name: 'artists',
       display: 'value',
       source: getTrack
     });
+
+    $('#form-back .typeahead').typeahead(null, {
+      name: 'artists',
+      display: 'value',
+      source: getTrack
+    });
+
+    $("#form-forward").submit(function(e) {
+        e.preventDefault();
+        var artist = $("#forward-artist").val();
+        var title = $("#forward-title").val();
+        var time = $("#forward-time").val();
+        window.location = "/forward/" + artist + "/" + title + "/" + time;
+    });
+
+    $("#form-back").submit(function(e) {
+        e.preventDefault();
+        var artist = $("#back-artist").val();
+        var title = $("#back-title").val();
+        var time = $("#back-time").val();
+        window.location = "/back/" + artist + "/" + title + "/" + time;
+    });
+
+    $("#form-sweden").submit(function(e) {
+        e.preventDefault();
+        var time = $("#sweden-time").val();
+        window.location = "/sweden/" + time;
+    });
+
+    $('#back .typeahead').on("typeahead:selected typeahead:autocompleted",
+        function(e, datum) {
+            $("#back-artist").val(datum.artist);
+            $("#back-title").val(datum.title);
+        });
+
+    $('#forward .typeahead').on("typeahead:selected typeahead:autocompleted",
+        function(e, datum) {
+            $("#forward-artist").val(datum.artist);
+            $("#forward-title").val(datum.title);
+        });
 });
 </script>
 {% endblock %}

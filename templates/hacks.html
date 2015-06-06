@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 
 {% block main %}
-<h2>Catcheruperer</h2>
-<p>Enter the last track you remember from the charts, and we'll build you a playlist
-to catch up with music since then</p>
+<h2>Toys</h2>
+<p>Show some data about a song</p>
+<form class="form-inline" method="get" action="/artist" id="track-form">
 <div id="track">
-  <input class="typeahead tt-input" type="text" placeholder="Track name">
+    <input type="hidden" name="artist" id="track-artist">
+    <input type="hidden" name="title" id="track-title">
+    <input class="typeahead tt-input" type="text" placeholder="Track name">
+    <input type="submit" class="btn" value="go">
 </div>
+</form>
 <h3>Other toys</h3>
 
 <h4>Charts per year</h4>
@@ -22,6 +26,13 @@ to catch up with music since then</p>
 
 <h4>Artist charts</h4>
 <p>Charts for a single artist</p>
+<form class="form-inline" id="artist-form">
+<div id="artist">
+    <input type="hidden" name="artist" id="artist-artist">
+    <input class="typeahead tt-input" type="text" placeholder="Artist name">
+    <input type="submit" class="btn" value="go">
+</div>
+</form>
 
 <h4>Charts of the charts</h4>
 <p><a href="/charts">Some "best-ofs" from the charts</a></p>
@@ -33,17 +44,56 @@ to catch up with music since then</p>
       datumTokenizer: Bloodhound.tokenizers.whitespace,
       queryTokenizer: Bloodhound.tokenizers.whitespace,
       remote: {
-        url: '/autocomplete?q=%QUERY',
+        url: '/complete/track?q=%QUERY',
+        wildcard: '%QUERY'
+      }
+    });
+
+    var getArtist = new Bloodhound({
+      datumTokenizer: Bloodhound.tokenizers.whitespace,
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      remote: {
+        url: '/complete/artist?q=%QUERY',
         wildcard: '%QUERY'
       }
     });
 
 $(document).ready(function() {
     $('#track .typeahead').typeahead(null, {
-      name: 'artists',
+      name: 'tracks',
       display: 'value',
       source: getTrack
     });
+
+    $('#artist .typeahead').typeahead(null, {
+      name: 'artists',
+      display: 'value',
+      source: getArtist
+    });
+
+    $("#track-form").submit(function(e) {
+        e.preventDefault();
+        var artist = $("#track-artist").val();
+        var title = $("#track-title").val();
+        window.location = "/artist/" + artist + "/" + title;
+    });
+
+    $("#artist-form").submit(function(e) {
+        e.preventDefault();
+        var artist = $("#artist-artist").val();
+        window.location = "/artist/" + artist;
+    });
+
+    $('#artist .typeahead').on("typeahead:selected typeahead:autocompleted",
+        function(e, datum) {
+            $("#artist-artist").val(datum.artist);
+        });
+
+    $('#track .typeahead').on("typeahead:selected typeahead:autocompleted",
+        function(e, datum) {
+            $("#track-artist").val(datum.artist);
+            $("#track-title").val(datum.title);
+        });
 });
 </script>
 {% endblock %}
