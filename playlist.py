@@ -22,6 +22,7 @@ def load_spdata():
 spdata = load_spdata()
 
 def make_playlist(artist, title, hours):
+    hours = int(hours)
 
     stats = db.stats(artist, title)
     start = stats['first']
@@ -138,6 +139,7 @@ def cache_playlist(meta, tracks):
         pass
 
     title = meta["title"]
+    playlistid = meta["playlistid"]
 
     filename = os.path.join("playlists", "%s.json" % playlistid)
 

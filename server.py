@@ -10,6 +10,7 @@ import os
 
 import db
 import conf
+import playlist
 
 app = Flask(__name__)
 
@@ -90,13 +91,13 @@ def completetrack():
     return None
 
 @app.route("/playlist/<playid>")
-def playlist(playid):
+def playlisturl(playid):
 
     pl = json.load(open(os.path.join("playlists", "%s.json" % playid)))
     meta = pl["meta"]
-    url = meta["url"]
+    url = meta["playlistopen"]
 
-    endpoint = url_for('playlistjson', playid)
+    endpoint = url_for('playlistjson', playid=playid)
 
     return render_template('playlist.html', endpoint=endpoint, url=url)
 
@@ -123,11 +124,22 @@ def back(artist, title, hours):
 
     playlist.cache_playlist(meta, tracks)
 
-    return redirect(url_for('playlist', playlistid))
+    return redirect(url_for('playlisturl', playid=playlistid))
 
 @app.route("/forward/<artist>/<path:title>/<hours>")
 def forward(artist, title, hours):
-    return render_template('playlist.html')
+    actual_hours, tracks = playlist.make_playlist(artist, title, hours)
+
+    trackids = playlist.songs_to_spotifyid(tracks)
+
+    title = "Catchup from %s - %s in %s hours" % (artist, title, actual_hours)
+    playlistid, playlistopen, playlistspoturl = playlist.create_spotify_playlist(title, trackids)
+
+    meta = {"title": title, "playlistid": playlistid, "playlistopen": playlistopen}
+
+    playlist.cache_playlist(meta, tracks)
+
+    return redirect(url_for('playlisturl', playid=playlistid))
 
 @app.route("/sweden/<hours>")
 def sweden(hours):
