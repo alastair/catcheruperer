@@ -11,6 +11,7 @@ import os
 import db
 import conf
 import playlist
+import swplaylist
 
 app = Flask(__name__)
 
@@ -28,7 +29,7 @@ def quote(s):
 
 @app.route("/artist/<artist>/<path:title>")
 def track(artist, title):
-    data = db.trackdata(artist, title)
+    data = db.trackdata(db.Chart, artist, title)
 
     dates = [d.week for d in data]
     positions = [d.position for d in data]
@@ -96,10 +97,11 @@ def playlisturl(playid):
     pl = json.load(open(os.path.join("playlists", "%s.json" % playid)))
     meta = pl["meta"]
     url = meta["playlistopen"]
+    title= meta["title"]
 
     endpoint = url_for('playlistjson', playid=playid)
 
-    return render_template('playlist.html', endpoint=endpoint, url=url)
+    return render_template('playlist.html', title=title, endpoint=endpoint, url=url)
 
 @app.route("/playlist/<playid>.json")
 def playlistjson(playid):
@@ -143,10 +145,10 @@ def forward(artist, title, hours):
 @app.route("/sweden/<hours>")
 def sweden(hours):
 
-    actual_hours, tracks = swplaylist.make_playlist(artist, title, hours)
+    actual_hours, tracks = swplaylist.make_playlist(hours)
     trackids = swplaylist.songs_to_spotifyid(tracks)
 
-    title = "Swedish popular music catchup in %s hours" % (artist, title, actual_hours)
+    title = "Swedish popular music catchup in %s hours" % (actual_hours, )
     playlistid, playlistopen, playlistspoturl = swplaylist.create_spotify_playlist(title, trackids)
 
     meta = {"title": title, "playlistid": playlistid, "playlistopen": playlistopen}

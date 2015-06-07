@@ -52,9 +52,14 @@ def make_playlist(hours):
     songs = []
     lastsong = None
     for s in allsongs:
-        if random.random() < remove_prob and s != lastsong:
+        k = "%s - %s" % (s[0], s[1])
+        print k
+        if random.random() < remove_prob and k != lastsong:
             songs.append(s)
-            lastsong = s
+            lastsong = k
+            print "#append"
+        else:
+            print "*skip"
 
     return actual_hours, songs
 
@@ -83,6 +88,7 @@ def songs_for_year(fromdate):
         artist, title, position, date = s
         if date != lastdate and len(tochoose):
             song = weighted_choice(tochoose)
+
             yearsongs.append(song)
             lastdate = date
             tochoose = []
@@ -138,19 +144,20 @@ def cache_playlist(meta, tracks):
     for artist, title, position, week in tracks:
         k = "%s - %s" % (artist, title)
         spmeta = spdata.get(k, {})
-        d = {
-                "startDate": week.replace("-", ","),
-                "endDate": week.replace("-", ","),
-                "headline": title,
-                "text":"<p>%s</p>" % artist,
-                "asset": {
-                    "media": spmeta.get("album_art"),
-                    "thumbnail": spmeta.get("album_art"),
-                    "credit":"",
-                    "caption":""
+        if spmeta:
+            d = {
+                    "startDate": week.replace("-", ","),
+                    "endDate": week.replace("-", ","),
+                    "headline": title,
+                    "text":"<p>%s</p>" % artist,
+                    "asset": {
+                        "media": "%s$$$%s" % (spmeta.get("preview_url"), spmeta.get("album_art")),
+                        "thumbnail": spmeta.get("album_art"),
+                        "credit":"",
+                        "caption":""
+                    }
                 }
-            }
-        tlist.append(d)
+            tlist.append(d)
 
     data = {"timeline":
     {

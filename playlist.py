@@ -152,7 +152,7 @@ def cache_playlist(meta, tracks):
                     "startDate": week.replace("-", ","),
                     "endDate": week.replace("-", ","),
                     "headline": title,
-                    "text":"<p>%s</p>" % artist,
+                    "text":"<p>%s (position %s)</p>" % (artist, position),
                     "asset": {
                         "media": "%s$$$%s" % (spmeta.get("preview_url"), spmeta.get("album_art")),
                         "thumbnail": spmeta.get("album_art"),
