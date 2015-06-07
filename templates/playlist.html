@@ -1,13 +1,24 @@
 {% extends "base.html" %}
 
-{% block main %}
-<h2>Playlist!</h2>
-
-<p>Spotify url: <a href="{{url}}">{{url}}</a></p>
-
-{% endblock %}
+<div id="playlist-timeline"></div>
 
 {% block scripts %}
-<script type="text/javascript">
+<script>
+window.audioElements = {}
+var timeline_config = {
+    width:              '100%',
+    height:             '600',
+    source:             'timeline.json',
+    embed_id:           'playlist-timeline',               //OPTIONAL USE A DIFFERENT DIV ID FOR EMBED
+    start_at_end:       false,                          //OPTIONAL START AT LATEST DATE
+    hash_bookmark:      true,                           //OPTIONAL LOCATION BAR HASHES
+    font:               'Bevan-PotanoSans',             //OPTIONAL FONT
+    debug:              true,                           //OPTIONAL DEBUG TO CONSOLE
+    lang:               'en',                           //OPTIONAL LANGUAGE
+    maptype:            'watercolor',                   //OPTIONAL MAP STYLE
+    css:                '/css/timeline.css',     //OPTIONAL PATH TO CSS
+    js:                 '/js/timeline.js'    //OPTIONAL PATH TO JS
+}
 </script>
+<script src="/js/storyjs-embed.js"></script>
 {% endblock %}

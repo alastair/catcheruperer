@@ -167,7 +167,7 @@ def cache_playlist(meta, tracks):
         "type":"default",
         "text":"",
         "asset": {
-            "media":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
+            "media":"https://p.scdn.co/mp3-preview/323af6f4006f3fedf28693ee5a73995523a78e44$$$https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
             "thumbnail":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
             "credit":"",
             "caption":""
