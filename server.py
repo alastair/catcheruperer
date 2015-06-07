@@ -114,7 +114,6 @@ def playlistjson(playid):
 def back(artist, title, hours):
 
     actual_hours, tracks = playlist.make_playlist(artist, title, hours)
-
     trackids = playlist.songs_to_spotifyid(tracks)
 
     title = "Catchup from %s - %s in %s hours" % (artist, title, actual_hours)
@@ -143,7 +142,18 @@ def forward(artist, title, hours):
 
 @app.route("/sweden/<hours>")
 def sweden(hours):
-    return render_template('playlist.html')
+
+    actual_hours, tracks = swplaylist.make_playlist(artist, title, hours)
+    trackids = swplaylist.songs_to_spotifyid(tracks)
+
+    title = "Swedish popular music catchup in %s hours" % (artist, title, actual_hours)
+    playlistid, playlistopen, playlistspoturl = swplaylist.create_spotify_playlist(title, trackids)
+
+    meta = {"title": title, "playlistid": playlistid, "playlistopen": playlistopen}
+
+    swplaylist.cache_playlist(meta, tracks)
+
+    return redirect(url_for('playlisturl', playid=playlistid))
 
 if __name__ == "__main__":
     app.run(debug=True)

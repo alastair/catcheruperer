@@ -18,6 +18,10 @@ def load_auc():
     return json.load(open("auc.json"))
 auc = load_auc()
 
+def load_swauc():
+    return json.load(open("swauc.json"))
+swauc = load_swauc()
+
 class Chart(Base):
     __tablename__ = "chart"
     id = Column(Integer, primary_key=True)
@@ -33,6 +37,21 @@ class Chart(Base):
 
     def __repr__(self):
         return "<Chart: %s - %s (%s:%s)>" % (self.artist, self.title, self.week, self.position)
+
+class Sweden(Base):
+    __tablename__ = "sweden"
+    id = Column(Integer, primary_key=True)
+    week = Column(String(50))
+    position = Column(Integer)
+    lastweek = Column(Integer)
+    change = Column(String(50))
+    peak = Column(String(50))
+    weeks = Column(String(50))
+    artist = Column(String(500))
+    title = Column(String(500))
+
+    def __repr__(self):
+        return "<Sweden: %s - %s (%s:%s)>" % (self.artist, self.title, self.week, self.position)
 
 
 def get_track_suggestions(query):
@@ -59,8 +78,8 @@ def get_artist_suggestions(query):
     charts = sorted(charts, key=lambda x: (x[0]*-1, x[1]))
     return [{"value": c[2], "artist": c[2]} for c in charts][:10]
 
-def trackdata(artist, title):
-    return session.query(Chart).filter(Chart.artist==artist).filter(Chart.title==title).all()
+def trackdata(model, artist, title):
+    return session.query(model).filter(model.artist==artist).filter(model.title==title).all()
 
 def longest_one():
     """ Find the tracks that have been at number one
@@ -99,14 +118,20 @@ def year(theyear):
     return sorted(ret, key=lambda x: x[3])
 
 def between(fr, to):
+    return dbbetween(Chart, fr, to)
+
+def swbetween(fr, to):
+    return dbbetween(Sweden, fr, to)
+
+def dbbetween(model, fr, to):
     """ Unique list of tracks on the chart in a year. Ordered by
     (entry date, chart position)
     """
     #  select artist, title, min(week), position from chart where week like '1990%' group by artist, title, position order by min(week), position;
     charts = session.query(
-        Chart.artist, Chart.title, Chart.position, Chart.week)\
-        .filter(Chart.week>=fr).filter(Chart.week <=to)\
-        .order_by(Chart.week, Chart.position)\
+        model.artist, model.title, model.position, model.week)\
+        .filter(model.week>=fr).filter(model.week <=to)\
+        .order_by(model.week, model.position)\
         .all()
     return charts
 
@@ -119,11 +144,11 @@ def artist(artistname):
         .all()
     return charts
 
-def stats(artist, title):
+def dbstats(model, artist, title):
     """ Stats for a single track:
        - (highest rank, weeks on chart, weeks at 1, chart start date, chart end date)
     """
-    data = trackdata(artist, title)
+    data = trackdata(model, artist, title)
     weeks = len(data)
     weeksone = len([d for d in data if d.position==1])
     datesort = sorted(data, key=lambda x: x.week)
@@ -133,13 +158,27 @@ def stats(artist, title):
         positionsort = sorted(data, key=lambda x: x.position)
         highest = positionsort[0].position
 
-        positions = [101 - d.position for d in data]
+        if model == Chart:
+            toprank = 101
+        elif model == Sweden:
+            print "rankkkk"
+            toprank = 11
+
+        print "toprank", toprank
+
+        positions = [toprank - d.position for d in data]
         rank = sum(positions)
 
         return {"artist": artist, "title": title, "highest": highest, "weeks": weeks,
                 "weeksone": weeksone, "first": first, "last": last, "rank": rank}
     else:
         return {}
+
+def stats(artist, title):
+    return dbstats(Chart, artist, title)
+
+def swstats(artist, title):
+    return dbstats(Sweden, artist, title)
 
 def makedb():
     Base.metadata.create_all(engine)

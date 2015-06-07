@@ -13,7 +13,7 @@ from dateutil import parser
 from datetime import timedelta
 
 def load_spdata():
-    d = json.load(open("spotify-data.json"))
+    d = json.load(open("sw-spotify-data.json"))
     new_d = {}
     for meta, data in d:
         new_d["%s - %s" % (meta[0], meta[1])] = data
@@ -21,24 +21,15 @@ def load_spdata():
 
 spdata = load_spdata()
 
-def make_playlist(artist, title, hours):
+def make_playlist(hours):
     hours = int(hours)
-
-    stats = db.stats(artist, title)
-    start = stats['first']
-
-    print stats
 
     # At first we make a basic assumption that a song is 4 minutes long
     songs_per_hour = 60.0/4
 
-    number_years = 2015 - int(start[:4])
+    start = str(2015-hours)
 
-    if number_years > hours:
-        actual_hours = number_years
-    else:
-        actual_hours = hours
-
+    actual_hours = hours
     available_slots = actual_hours * songs_per_hour
 
     print "actual hours %s avail slots %s" % (actual_hours, available_slots)
@@ -84,7 +75,7 @@ def songs_for_year(fromdate):
 
     yearsongs = []
 
-    songs = db.between(fromdate, finaldate)
+    songs = db.swbetween(fromdate, finaldate)
 
     lastdate = None
     tochoose = []
@@ -97,8 +88,8 @@ def songs_for_year(fromdate):
             tochoose = []
 
         k = "%s - %s" % (artist, title)
-        weight = db.auc.get(k, 0)
-        factor = 1-(math.log(position)/math.log(101))
+        weight = db.swauc.get(k, 0)
+        factor = 1-(math.log(position)/math.log(11))
         tochoose.append( (s, weight*factor) )
 
     return yearsongs
@@ -147,20 +138,19 @@ def cache_playlist(meta, tracks):
     for artist, title, position, week in tracks:
         k = "%s - %s" % (artist, title)
         spmeta = spdata.get(k, {})
-        if spmeta:
-            d = {
-                    "startDate": week.replace("-", ","),
-                    "endDate": week.replace("-", ","),
-                    "headline": title,
-                    "text":"<p>%s</p>" % artist,
-                    "asset": {
-                        "media": "%s$$$%s" % (spmeta.get("preview_url"), spmeta.get("album_art")),
-                        "thumbnail": spmeta.get("album_art"),
-                        "credit":"",
-                        "caption":""
-                    }
+        d = {
+                "startDate": week.replace("-", ","),
+                "endDate": week.replace("-", ","),
+                "headline": title,
+                "text":"<p>%s</p>" % artist,
+                "asset": {
+                    "media": spmeta.get("album_art"),
+                    "thumbnail": spmeta.get("album_art"),
+                    "credit":"",
+                    "caption":""
                 }
-            tlist.append(d)
+            }
+        tlist.append(d)
 
     data = {"timeline":
     {
@@ -168,7 +158,7 @@ def cache_playlist(meta, tracks):
         "type":"default",
         "text":"",
         "asset": {
-            "media":"https://p.scdn.co/mp3-preview/323af6f4006f3fedf28693ee5a73995523a78e44$$$https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
+            "media":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
             "thumbnail":"https://i.scdn.co/image/8f287f3a098826e5f8d3a9c2351ad5de0fd84901",
             "credit":"",
             "caption":""
